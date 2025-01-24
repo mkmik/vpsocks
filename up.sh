@@ -2,15 +2,18 @@
 
 set -euo pipefail
 
-endpoint="$1"
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+endpoint="${1:-}"
+useragent="${2:-OpenConnect}"
 
 usage() {
-    echo "usage: $0 https://<vpn-gateway>"
+    echo "usage: $0 https://<vpn-gateway> [<user-agent>]"
     exit 1
 }
 
 cleanup() {
-    rm -f vpn.env
+    echo >vpn.env
 }
 trap cleanup EXIT
 
@@ -24,8 +27,13 @@ if [ -z "${endpoint}" ]; then
     usage
 fi
 
+if docker compose ps -q | grep -q . ; then
+    echo "VPN containers are already running, stopping first"
+    ./down.sh
+fi
+
 openconnect \
-    --useragent="AnyConnect-compatible OpenConnect VPN Agent" \
+    --useragent="${useragent}" \
     --external-browser "${browser}" \
     --authenticate \
     "${endpoint}" \

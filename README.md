@@ -2,7 +2,7 @@
 
 ## What
 
-Runs `openconnect` and a SOCKS proxy
+Runs `openconnect` and a SOCKS proxy in a containerized environment.
 
 ## Why
 
@@ -21,20 +21,30 @@ will use the VPN.
 
 ## How to use
 
-```console
-$ up.sh
+```bash
+./up.sh https://my-vpn-gateway/foo/bar
 ```
 
 Now you can configure the applications that need to access resources in the VPN to use the SOCKS proxy at `localhost:1080`. E.g:
 
-* `ALL_PROXY=socks5h://localhost:1080` (used e.g. by `curl` )
-* `HTTPS_PROXY=socks5://localhost:1080` (used e.g. by `kubectl` )
+* `HTTPS_PROXY=socks5://localhost:1080` ( `curl`, `kubectl`, most `python` scripts, ... )
 * Browser extensions such as [Proxy SwitchyOmega](https://chromewebstore.google.com/detail/proxy-switchyomega/padekgcemlokbadohgkifijomclgjgif?hl=en)
+* You may need to `pip install PySocks` for python scripts to pick up the `HTTPS_PROXY` env var
+
+To shut the VPN down:
+
+```bash
+./down.sh
+```
 
 ## How it works
 
 1. The `up.sh` script first runs `openconnect` locally to authenticate to the VPN 
 2. The ephemeral VPN parameters are saved in a local file `vpn.env`
+3. The `up.sh` script runs `docker compose up`
+4. The docker compose config contains two containers: one running `openconnect` and one running dante `sockd` proxy
+5. The sockd proxy container waits until the openconnect container is healthy because the `tun0` interface must exist for `sockd` to startup.
+
 
 ## Security note
 

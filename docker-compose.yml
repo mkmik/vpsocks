@@ -1,0 +1,27 @@
+services:
+  openconnect:
+    image: vpsocks
+    command: connect.sh
+    ports:
+      - "1080:1080"
+    env_file:
+     - path: ./vpn.env
+       required: true
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+      - /dev/vhost-net:/dev/vhost-net
+    healthcheck:
+      test: pgrep openconnect || exit 1
+      interval: 40s
+      timeout: 30s
+      retries: 3
+      start_period: 10s
+  sockd:
+    image: vpsocks
+    command: sockd
+    network_mode: service:openconnect
+    depends_on:
+        openconnect: 
+          condition: service_healthy
